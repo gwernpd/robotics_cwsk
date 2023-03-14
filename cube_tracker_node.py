@@ -107,8 +107,8 @@ class cubeTracker:
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
 
       # Adjust the z coordinate of the end effector
-      if (abs(self.targetX-0.5)>0.1):
-        self.jointRequest.position[2] =self.jointPose[0]-(self.targetX-0.5)  # Set a fixed z value for now
+      if (abs(self.targetZ-0.5)>0.1):
+        self.jointRequest.position[2] =self.jointPose[0]-(self.targetZ-0.5)  # Set a fixed z value for now
 
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
