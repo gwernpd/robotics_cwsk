@@ -85,18 +85,18 @@ class cubeSpotter:
     # R = Val
 
     # Yellow - H=30
-    self.hsvYellowLow=(20.0000, 100.0000, 150.0000)
-    self.hsvYellowHigh=(30.0000, 255.0000, 255.0000)
+    self.hsvYellowLow=(20, 100, 100)
+    self.hsvYellowHigh=(30, 255, 255)
 
     # Blue
-    self.hsvBlueLow=(95.0000, 150.0000, 50.0000)
-    self.hsvBlueHigh=(110,255,255)
+    self.hsvBlueLow=(100, 150, 0)
+    self.hsvBlueHigh=(140,255,255)
 
     # Red - wraps around 0, but the red blocks are mostly in the 0-10 range
-    self.hsvRedLow1=(0.0000, 100.0000, 100.0000)
-    self.hsvRedHigh1=(15,255,255)
-    self.hsvRedLow2=(177.0000, 100.0000, 100.0000)
-    self.hsvRedHigh2=(180,255,255)
+    self.hsvRedLow1=(0, 70, 50)
+    self.hsvRedHigh1=(10,255,255)
+    #self.hsvRedLow2=(177.0000, 100.0000, 100.0000)
+    #self.hsvRedHigh2=(180,255,255)
 
     # Use the openCV bridge
     self.bridge = CvBridge()
@@ -129,9 +129,9 @@ class cubeSpotter:
 
     # Red is the difficult case, as it wraps around the zero point
 
-    maskRed1 = cv2.inRange(hsv_image, self.hsvRedLow1, self.hsvRedHigh1)
-    maskRed2 = cv2.inRange(hsv_image, self.hsvRedLow2, self.hsvRedHigh2)
-    maskRed = maskRed1+maskRed2
+    maskRed = cv2.inRange(hsv_image, self.hsvRedLow1, self.hsvRedHigh1)
+    #maskRed2 = cv2.inRange(hsv_image, self.hsvRedLow2, self.hsvRedHigh2)
+    #maskRed = maskRed1+maskRed2
 
     # Erode then Dilate the image to remove small elements
     erodedMaskRed=erode(maskRed, 11)
@@ -157,7 +157,7 @@ class cubeSpotter:
 
     cv2.imshow("Detected Objects", cv_image)
     cv2.waitKey(3) # This redraws the window
-'''
+
     # Get the size of the image to normalise the output
     (rows,cols,channels) = cv_image.shape
 
@@ -206,4 +206,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
-'''
