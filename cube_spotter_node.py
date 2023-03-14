@@ -93,10 +93,10 @@ class cubeSpotter:
     self.hsvBlueHigh=(140,255,255)
 
     # Red - wraps around 0, but the red blocks are mostly in the 0-10 range
-    self.hsvRedLow1=(0, 70, 50)
-    self.hsvRedHigh1=(10,255,255)
-    #self.hsvRedLow2=(177.0000, 100.0000, 100.0000)
-    #self.hsvRedHigh2=(180,255,255)
+    self.hsvRedLow1=(0, 50, 20)
+    self.hsvRedHigh1=(5,255,255)
+    self.hsvRedLow2=(175, 50, 20)
+    self.hsvRedHigh2=(180,255,255)
 
     # Use the openCV bridge
     self.bridge = CvBridge()
