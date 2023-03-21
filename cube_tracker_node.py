@@ -2,8 +2,6 @@
 from __future__ import print_function
 from re import X
 
-import time
-import random
 import roslib
 roslib.load_manifest('cube_spotter')
 import sys
@@ -22,44 +20,7 @@ from open_manipulator_msgs.srv import GetJointPosition
 
 
 class cubeTracker:
-  
-  class Robot:
-    def __init__(self):
-        self.current_joint_positions = [0, 0, 0, 0]
-        
-    def move_joint(self, joint_number, position):
-        self.current_joint_positions[joint_number] = position
-    
-    def pivot(self):
-        self.move_joint(0, random.randint(-180, 180))
-    
-    def search_for_cube(self):
-        time.sleep(1)
-        if random.random() > 0.5:
-            return True
-        else:
-            return False
-        
-    def pick_up_cube(self):
-        time.sleep(1)
-        
-    def move_to_cube(self):
-        time.sleep(1)
-        self.move_joint(1, random.randint(-90, 90))
-        self.move_joint(2, random.randint(-90, 90))
-        self.move_joint(3, random.randint(-90, 90))
-        
-    def execute(self):
-        if self.search_for_cube():
-            self.move_to_cube()
-            self.pick_up_cube()
-        else:
-            self.pivot()
 
-  robot = Robot()
-  for _ in range(5):
-      robot.execute()
-    
   def __init__(self):
 
     # Where the block is in the image (start at the centre)
@@ -125,6 +86,9 @@ class cubeTracker:
     self.jointPose=data.position
 
 
+
+
+
   # Get data on if the robot is currently moving
   def getStates(self,data):
     if (data.open_manipulator_moving_state=='"STOPPED"'):
@@ -138,20 +102,17 @@ class cubeTracker:
   def aimCamera(self):
     if self.readyToMove==True: # If the robot state is not moving
 
-      # Extremely simple - aim towards the target using joints [0], [2] and [3]
+      # Extremely simple - aim towards the target using joints [0] and [3]
       if (abs(self.targetY-0.5)>0.1):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
 
       if (abs(self.targetX-0.5)>0.1):
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
 
-      # Adjust the z coordinate of the end effector
-      if (abs(self.targetZ-0.5)>0.1):
-        self.jointRequest.position[2] =self.jointPose[0]-(self.targetZ-0.5)  # Set a fixed z value for now
-
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
+
 
 
   # Find the normalised XY co-ordinate of a cube
@@ -161,7 +122,6 @@ class cubeTracker:
     area=[]
     coX=[]
     coY=[]
-    coZ=[]
 
     # Get the red cubes
     for c in range(len(data.cubes)):
@@ -169,31 +129,15 @@ class cubeTracker:
         area.append(data.cubes[c].area)
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
-        coZ.append(data.cubes[c].normalisedCoordinateZ)
 
-      if (data.cubes[c].cube_colour=='blue'):
-        area.append(data.cubes[c].area)
-        coX.append(data.cubes[c].normalisedCoordinateX)
-        coY.append(data.cubes[c].normalisedCoordinateY)
-        coZ.append(data.cubes[c].normalisedCoordinateZ)
-      
-      if (data.cubes[c].cube_colour=='yellow'):
-        area.append(data.cubes[c].area)
-        coX.append(data.cubes[c].normalisedCoordinateX)
-        coY.append(data.cubes[c].normalisedCoordinateY)
-        coZ.append(data.cubes[c].normalisedCoordinateZ)
-
-    # If no red cubes detected, set target to center
-    if len(coX)==0:
+    # Find the biggest red cube
+    if (len(area))>0:
+      index_max = max(range(len(area)), key=area.__getitem__)
+      self.targetX=coX[index_max]
+      self.targetY=coY[index_max]
+    else: # If you dont find a target, report the centre of the image to keep the camera still
       self.targetX=0.5
       self.targetY=0.5
-      self.targetZ=0.2
-    else:
-      # Track the biggest red cube
-      biggest=np.argmax(area)
-      self.targetX=coX[biggest]
-      self.targetY=coY[biggest]
-      self.targetZ=coZ[biggest]
 
 # Main 
 def main(args):

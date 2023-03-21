@@ -19,6 +19,24 @@ class cube:
     self.centreY=0.0
     self.area=0.0
 
+class Cube:
+  def __init__(self, centreX, centreY, centreZ, width, length, height):
+        self.centreX = centreX
+        self.centreY = centreY
+        self.centreZ = centreZ + (height / 2)
+        self.width = width
+        self.length = length
+        self.height = height
+
+  def getNormalisedCoordinates(self):
+        tempCube = Cube(self.centreX, self.centreY, self.centreZ, self.width, self.length, self.height)
+        tempCube.centreX /= tempCube.width
+        tempCube.centreY /= tempCube.length
+        tempCube.centreZ /= tempCube.height
+        tempCube.normalisedCoordinateZ = tempCube.centreZ / tempCube.height
+        return tempCube
+
+
 # Function for finding boxes and drawing on the output image
 def mask2box(mask,colour,canvas,minArea):
 
@@ -85,12 +103,12 @@ class cubeSpotter:
     # R = Val
 
     # Yellow - H=30
-    self.hsvYellowLow=(20, 100, 100)
-    self.hsvYellowHigh=(30, 255, 255)
+    #self.hsvYellowLow=(20, 100, 100)
+    #self.hsvYellowHigh=(30, 255, 255)
 
     # Blue
-    self.hsvBlueLow=(100, 150, 0)
-    self.hsvBlueHigh=(140,255,255)
+    #self.hsvBlueLow=(100, 150, 0)
+    #self.hsvBlueHigh=(140,255,255)
 
     # Red - wraps around 0, but the red blocks are mostly in the 0-10 range
     self.hsvRedLow1=(0, 50, 20)
@@ -124,8 +142,8 @@ class cubeSpotter:
     # Create a mask for each colour being tracked
     # mask = cv2.inRange(hsv_image, darkerColour, brighterColour)
 
-    maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
-    maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
+    #maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
+    #maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
 
     # Red is the difficult case, as it wraps around the zero point
 
@@ -135,12 +153,12 @@ class cubeSpotter:
 
     # Erode then Dilate the image to remove small elements
     erodedMaskRed=erode(maskRed, 11)
-    erodedMaskBlue=erode(maskBlue, 11)
-    erodedMaskYellow=erode(maskYellow, 11)    
+    #erodedMaskBlue=erode(maskBlue, 11)
+    #erodedMaskYellow=erode(maskYellow, 11)    
     
     dilatedMaskRed=dilate(erodedMaskRed, 11)
-    dilatedMaskBlue=dilate(erodedMaskBlue, 11)
-    dilatedMaskYellow=dilate(erodedMaskYellow, 11)
+    #dilatedMaskBlue=dilate(erodedMaskBlue, 11)
+    #dilatedMaskYellow=dilate(erodedMaskYellow, 11)
 
 
     # Minimum area of objects to find in pixels
@@ -151,8 +169,8 @@ class cubeSpotter:
 
     # Find the objects in each mask - colours are BGR - draw on the "canvas"
     canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
-    canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
-    canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
+    #canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
+    #canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
 
 
     cv2.imshow("Detected Objects", cv_image)
@@ -172,21 +190,21 @@ class cubeSpotter:
       tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows
       returnCubeArray.cubes.append(tempCube)
 
-    for c in range(len(cubeListBlue)):
-      tempCube=cubeData()
-      tempCube.cube_colour='blue'
-      tempCube.area=cubeListBlue[c].area
-      tempCube.normalisedCoordinateX=cubeListBlue[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListBlue[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)
+   # for c in range(len(cubeListBlue)):
+   #   tempCube=cubeData()
+   #   tempCube.cube_colour='blue'
+   #   tempCube.area=cubeListBlue[c].area
+   #   tempCube.normalisedCoordinateX=cubeListBlue[c].centreX/cols
+   #   tempCube.normalisedCoordinateY=cubeListBlue[c].centreY/rows
+   #   returnCubeArray.cubes.append(tempCube)
 
-    for c in range(len(cubeListYellow)):
-      tempCube=cubeData()
-      tempCube.cube_colour='yellow'
-      tempCube.area=cubeListYellow[c].area
-      tempCube.normalisedCoordinateX=cubeListYellow[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListYellow[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)   
+   # for c in range(len(cubeListYellow)):
+   #   tempCube=cubeData()
+   #   tempCube.cube_colour='yellow'
+   #   tempCube.area=cubeListYellow[c].area
+   #   tempCube.normalisedCoordinateX=cubeListYellow[c].centreX/cols
+   #   tempCube.normalisedCoordinateY=cubeListYellow[c].centreY/rows
+   #   returnCubeArray.cubes.append(tempCube)   
 
     try:
       self.cube_pub.publish(returnCubeArray)
