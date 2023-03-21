@@ -2,6 +2,8 @@
 from __future__ import print_function
 from re import X
 
+import time
+import random
 import roslib
 roslib.load_manifest('cube_spotter')
 import sys
@@ -20,7 +22,44 @@ from open_manipulator_msgs.srv import GetJointPosition
 
 
 class cubeTracker:
+  
+  class Robot:
+    def __init__(self):
+        self.current_joint_positions = [0, 0, 0, 0]
+        
+    def move_joint(self, joint_number, position):
+        self.current_joint_positions[joint_number] = position
+    
+    def pivot(self):
+        self.move_joint(0, random.randint(-180, 180))
+    
+    def search_for_cube(self):
+        time.sleep(1)
+        if random.random() > 0.5:
+            return True
+        else:
+            return False
+        
+    def pick_up_cube(self):
+        time.sleep(1)
+        
+    def move_to_cube(self):
+        time.sleep(1)
+        self.move_joint(1, random.randint(-90, 90))
+        self.move_joint(2, random.randint(-90, 90))
+        self.move_joint(3, random.randint(-90, 90))
+        
+    def execute(self):
+        if self.search_for_cube():
+            self.move_to_cube()
+            self.pick_up_cube()
+        else:
+            self.pivot()
 
+  robot = Robot()
+  for _ in range(5):
+      robot.execute()
+    
   def __init__(self):
 
     # Where the block is in the image (start at the centre)
