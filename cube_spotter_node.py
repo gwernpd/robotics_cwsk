@@ -13,11 +13,34 @@ from cube_spotter.msg import cubeArray
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np;
 
+
+FOCAL_LENGTH = 0.01  # 10 cm
+CUBE_SIZE = 0.1  # 10 cm
+CAMERA_HEIGHT = 0.35  # 1 meter
+
 class cube:
   def __init__(self):
     self.centreX=0.0
     self.centreY=0.0
+    self.centreZ=0.0
     self.area=0.0
+    
+    self.size = np.sqrt(cube.area)
+    self.distance = (CUBE_SIZE * FOCAL_LENGTH) / self.size
+    self.centreZ = CAMERA_HEIGHT - self.distance
+
+class cubeArray:
+    def __init__(self):
+        self.header = String()
+        self.cubeArray = [cubeData()]
+
+    def getCentre(self):
+        result=[]
+        for i in self.cubeArray:
+            result.append([i.x, i.y, i.z])
+        return result
+
+cube_array = cubeArray()
 
 # Function for finding boxes and drawing on the output image
 def mask2box(mask,colour,canvas,minArea):
@@ -40,14 +63,20 @@ def mask2box(mask,colour,canvas,minArea):
     box = cv2.boxPoints(minRect[i])
     centre=minRect[i][0]
     size=minRect[i][1]
+    distance = (CUBE_SIZE * FOCAL_LENGTH) / np.sqrt(size)
+    z = CAMERA_HEIGHT - distance
     tempCube.centreX=centre[0]
     tempCube.centreY=centre[1]
-    tempCube.area=size[0]*size[1]
+    tempCube.area=size
+    tempCube.centreZ = z
     cubeList[i]=tempCube
     box = np.intp(box) #np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
     cv2.drawContours(canvas, [box], 0, colour)
 
+    
+
   return canvas, cubeList
+
 
 # Image erosion (remove edge of shapes and small blobs)
 def erode(image,erosion_size):
@@ -153,6 +182,13 @@ class cubeSpotter:
     canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
     canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
     canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
+    for i in range(len(cubeListRed)):
+      cube_data = cubeData()
+      cube_data.x = cubeListRed[i].centreX
+      cube_data.y = cubeListRed[i].centreY
+      cube_data.z = cubeListRed[i].centreZ
+      cube_array.cubeArray.append(cube_data)
+    self.cube_pub.publish(cube_array)
 
 
     cv2.imshow("Detected Objects", cv_image)
@@ -170,23 +206,7 @@ class cubeSpotter:
       tempCube.area=cubeListRed[c].area
       tempCube.normalisedCoordinateX=cubeListRed[c].centreX/cols
       tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)
-
-    for c in range(len(cubeListBlue)):
-      tempCube=cubeData()
-      tempCube.cube_colour='blue'
-      tempCube.area=cubeListBlue[c].area
-      tempCube.normalisedCoordinateX=cubeListBlue[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListBlue[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)
-
-    for c in range(len(cubeListYellow)):
-      tempCube=cubeData()
-      tempCube.cube_colour='yellow'
-      tempCube.area=cubeListYellow[c].area
-      tempCube.normalisedCoordinateX=cubeListYellow[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListYellow[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)   
+      returnCubeArray.cubes.append(tempCube)  
 
     try:
       self.cube_pub.publish(returnCubeArray)
