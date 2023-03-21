@@ -12,6 +12,7 @@ from sensor_msgs.msg import JointState
 from cube_spotter.msg import cubeData
 from cube_spotter.msg import cubeArray
 import numpy as np;
+import math
 
 from open_manipulator_msgs.msg import OpenManipulatorState
 from open_manipulator_msgs.msg import JointPosition
@@ -122,6 +123,7 @@ class cubeTracker:
     area=[]
     coX=[]
     coY=[]
+    coZ=[]
 
     # Get the red cubes
     for c in range(len(data.cubes)):
@@ -129,15 +131,18 @@ class cubeTracker:
         area.append(data.cubes[c].area)
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
+        coZ.append(data.cubes[c].normalisedCoordinateZ)
 
     # Find the biggest red cube
     if (len(area))>0:
       index_max = max(range(len(area)), key=area.__getitem__)
       self.targetX=coX[index_max]
       self.targetY=coY[index_max]
+      self.targetZ=coZ[index_max]
     else: # If you dont find a target, report the centre of the image to keep the camera still
       self.targetX=0.5
       self.targetY=0.5
+      self.targetZ=0.5
 
 # Main 
 def main(args):
