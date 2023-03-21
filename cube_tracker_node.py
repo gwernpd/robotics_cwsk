@@ -27,6 +27,7 @@ class cubeTracker:
     # Where the block is in the image (start at the centre)
     self.targetX=0.5
     self.targetY=0.5
+    self.targetZ=0.5
 
     # Whether the robot is ready to move (assume it isn't)
     self.readyToMove=False
@@ -132,6 +133,8 @@ class cubeTracker:
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
         coZ.append(data.cubes[c].normalisedCoordinateZ)
+        print(coX)
+        print(coZ)
 
     # Find the biggest red cube
     if (len(area))>0:
@@ -146,7 +149,7 @@ class cubeTracker:
 
 # Main 
 def main(args):
-
+  
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
   try:
