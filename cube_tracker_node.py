@@ -20,6 +20,42 @@ from open_manipulator_msgs.srv import SetJointPosition
 from open_manipulator_msgs.srv import GetJointPosition
 
 
+import anki_vector
+import time
+
+with anki_vector.Robot() as robot:
+    # Define the threshold for detecting a cube
+    cube_threshold = 50
+
+    # Continuously scan for cubes until one is detected
+    while True:
+        # Rotate the head to the left and scan for a cube
+        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(-45))
+        time.sleep(0.5)
+        if robot.world.visible_objects:
+            cube = robot.world.visible_objects[0]
+            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
+                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
+                break
+
+        # Rotate the head to the right and scan for a cube
+        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(90))
+        time.sleep(0.5)
+        if robot.world.visible_objects:
+            cube = robot.world.visible_objects[0]
+            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
+                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
+                break
+
+        # Rotate the head to the center and scan for a cube
+        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(-45))
+        time.sleep(0.5)
+        if robot.world.visible_objects:
+            cube = robot.world.visible_objects[0]
+            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
+                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
+                break
+                
 class cubeTracker:
 
   def __init__(self):
@@ -133,8 +169,8 @@ class cubeTracker:
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
         coZ.append(data.cubes[c].normalisedCoordinateZ)
-        print(coX)
-        print(coZ)
+        #print(coX)
+        #print(coZ)
 
     # Find the biggest red cube
     if (len(area))>0:
