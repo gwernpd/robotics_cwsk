@@ -1,0 +1,90 @@
+from __future__ import print_function
+
+import rospy
+from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
+
+import cv2
+import numpy as np
+
+from cube_spotter.msg import cubeData
+from cube_spotter.msg import cubeArray
+
+
+class cube:
+  def __init__(self):
+    self.centreX = 0.0
+    self.centreY = 0.0
+    self.area = 0.0
+
+
+# Function for finding boxes and drawing on the output image
+def mask2box(mask, colour, canvas, minArea):
+    # convert image into contours
+    contours, hierachy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    cubeList = dict()
+
+    # Remove small areas
+    minRect = []
+    for i, c in enumerate(contours):
+        if cv2.contourArea(c) > minArea:
+            minRect.append(cv2.minAreaRect(c))
+
+    for i, c in enumerate(minRect):
+        tempCube = cube()
+        box = cv2.boxPoints(minRect[i])
+        centre = minRect[i][0]
+        size = minRect[i][1]
+        tempCube.centreX = centre[0]
+        tempCube.centreY = centre[1]
+        tempCube.area = size[0] * size[1]
+        cubeList[i] = tempCube
+        box = np.intp(box)  # np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
+        cv2.drawContours(canvas, [box], 0, colour)
+
+    return canvas, cubeList
+
+
+# Image erosion (remove edge of shapes and small blobs)
+def erode(image, erosion_size):
+    erosion_shape = cv2.MORPH_ELLIPSE
+    element = cv2.getStructuringElement(erosion_shape, (2 * erosion_size + 1, 2 * erosion_size + 1),
+                                        (erosion_size, erosion_size))
+
+    eroded = cv2.erode(image, element)
+
+    return eroded
+
+
+# Image dilation (make blobs bigger)
+def dilate(image, dilation_size):
+    dilation_shape = cv2.MORPH_ELLIPSE
+    element = cv2.getStructuringElement(dilation_shape, (2 * dilation_size + 1, 2 * dilation_size + 1),
+                                         (dilation_size, dilation_size))
+    dilated = cv2.dilate(image, element)
+
+    return dilated
+
+
+class cubeSpotter:
+
+    def __init__(self):
+        # Define the colour ranges used to detect the blocks
+        # Looking at the hsv image can be used to tune the values
+        # When looking at the colours in an image, the colour channels are always labelled as RGB
+        # OpenCv uses BGR image format, so when passing through colours the channels are actually mapped as:
+        # B = Hue
+        # G = Sat
+        # R = Val
+
+        # Yellow - H=30
+        self.hsvYellowLow = (20.0000, 100.0000, 150.0000)
+        self.hsvYellowHigh = (30.0000, 255.0000, 255.0000)
+
+        # Blue
+        self.hsvBlueLow = (95.0000, 150.0000, 50.0000)
+        self.hsvBlueHigh = (110, 255, 255)
+
+        # Red - wraps around 0, but the red blocks are mostly
