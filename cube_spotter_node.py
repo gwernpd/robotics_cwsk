@@ -13,11 +13,11 @@ from cube_spotter.msg import cubeArray
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np;
 
-class cube:
-  def __init__(self):
-    self.centreX=0.0
-    self.centreY=0.0
-    self.area=0.0
+#class cube:
+#  def __init__(self):
+#    self.centreX=0.0
+#    self.centreY=0.0
+#    self.area=0.0
 
 class Cube:
   def __init__(self, centreX, centreY, centreZ, width, length, height):
@@ -34,6 +34,7 @@ class Cube:
         tempCube.centreY /= tempCube.length
         tempCube.centreZ /= tempCube.height
         tempCube.normalisedCoordinateZ = tempCube.centreZ / tempCube.height
+        print(tempCube.normalisedCoordinateZ)
         return tempCube
 
 
@@ -54,7 +55,7 @@ def mask2box(mask,colour,canvas,minArea):
 
     
   for i, c in enumerate(minRect):
-    tempCube=cube()  
+    tempCube=Cube(0, 0, 0, 0.03, 0.03, 0.058)
     box = cv2.boxPoints(minRect[i])
     centre=minRect[i][0]
     size=minRect[i][1]
@@ -62,6 +63,7 @@ def mask2box(mask,colour,canvas,minArea):
     tempCube.centreY=centre[1]
     tempCube.area=size[0]*size[1]
     cubeList[i]=tempCube
+
     box = np.intp(box) #np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
     cv2.drawContours(canvas, [box], 0, colour)
 
@@ -188,6 +190,7 @@ class cubeSpotter:
       tempCube.area=cubeListRed[c].area
       tempCube.normalisedCoordinateX=cubeListRed[c].centreX/cols
       tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows
+      
       returnCubeArray.cubes.append(tempCube)
 
    # for c in range(len(cubeListBlue)):
