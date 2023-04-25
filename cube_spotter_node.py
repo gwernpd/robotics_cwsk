@@ -13,29 +13,17 @@ from cube_spotter.msg import cubeArray
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np;
 
-#class cube:
-#  def __init__(self):
-#    self.centreX=0.0
-#    self.centreY=0.0
-#    self.area=0.0
+
 
 class Cube:
-  def __init__(self, centreX, centreY, centreZ, width, length, height):
+  def __init__(self, centreX, centreY, width, length, height):
         self.centreX = centreX
         self.centreY = centreY
-        self.centreZ = centreZ + (height / 2)
         self.width = width
         self.length = length
         self.height = height
 
-  def getNormalisedCoordinates(self):
-        tempCube = Cube(self.centreX, self.centreY, self.centreZ, self.width, self.length, self.height)
-        tempCube.centreX /= tempCube.width
-        tempCube.centreY /= tempCube.length
-        tempCube.centreZ /= tempCube.height
-        tempCube.normalisedCoordinateZ = tempCube.centreZ / tempCube.height
-        print(tempCube.normalisedCoordinateZ)
-        return tempCube
+
 
 
 # Function for finding boxes and drawing on the output image
@@ -55,7 +43,7 @@ def mask2box(mask,colour,canvas,minArea):
 
     
   for i, c in enumerate(minRect):
-    tempCube=Cube(0, 0, 0, 0.03, 0.03, 0.058)
+    tempCube=Cube(0, 0, 0, 0, 0)
     box = cv2.boxPoints(minRect[i])
     centre=minRect[i][0]
     size=minRect[i][1]
@@ -170,6 +158,7 @@ class cubeSpotter:
     canvas=cv_image
 
     # Find the objects in each mask - colours are BGR - draw on the "canvas"
+
     canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
     #canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
     #canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
@@ -189,8 +178,7 @@ class cubeSpotter:
       tempCube.cube_colour='red'
       tempCube.area=cubeListRed[c].area
       tempCube.normalisedCoordinateX=cubeListRed[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows
-      
+      tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows      
       returnCubeArray.cubes.append(tempCube)
 
    # for c in range(len(cubeListBlue)):
