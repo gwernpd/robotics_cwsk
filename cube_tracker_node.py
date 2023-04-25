@@ -18,44 +18,8 @@ from open_manipulator_msgs.msg import OpenManipulatorState
 from open_manipulator_msgs.msg import JointPosition
 from open_manipulator_msgs.srv import SetJointPosition
 from open_manipulator_msgs.srv import GetJointPosition
+test = True
 
-
-import anki_vector
-import time
-
-with anki_vector.Robot() as robot:
-    # Define the threshold for detecting a cube
-    cube_threshold = 50
-
-    # Continuously scan for cubes until one is detected
-    while True:
-        # Rotate the head to the left and scan for a cube
-        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(-45))
-        time.sleep(0.5)
-        if robot.world.visible_objects:
-            cube = robot.world.visible_objects[0]
-            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
-                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
-                break
-
-        # Rotate the head to the right and scan for a cube
-        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(90))
-        time.sleep(0.5)
-        if robot.world.visible_objects:
-            cube = robot.world.visible_objects[0]
-            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
-                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
-                break
-
-        # Rotate the head to the center and scan for a cube
-        robot.behavior.turn_in_place(angle=anki_vector.util.degrees(-45))
-        time.sleep(0.5)
-        if robot.world.visible_objects:
-            cube = robot.world.visible_objects[0]
-            if cube.object_type == anki_vector.objects.CustomObjectTypes.CustomType00 and cube.pose.distance_3d(robot.pose) < cube_threshold:
-                print(f"Cube detected! Distance: {cube.pose.distance_3d(robot.pose):.2f} mm")
-                break
-                
 class cubeTracker:
 
   def __init__(self):
@@ -63,7 +27,8 @@ class cubeTracker:
     # Where the block is in the image (start at the centre)
     self.targetX=0.5
     self.targetY=0.5
-    self.targetZ=0.5
+    self.targetArea=0
+    self.previous_area=0
 
     # Whether the robot is ready to move (assume it isn't)
     self.readyToMove=False
@@ -111,7 +76,7 @@ class cubeTracker:
     # Send the robot "home"
     self.jointRequest=JointPosition()
     self.jointRequest.joint_name=["joint1","joint2","joint3","joint4"]  
-    self.jointRequest.position=[0.0,-1.05,0.357,0.703]
+    self.jointRequest.position=[0.0,-1.05,0.357,1.8]
     self.setPose(str(),self.jointRequest,1.0)
 
     rospy.sleep(1) # Wait for the arm to stand up
@@ -147,10 +112,34 @@ class cubeTracker:
       if (abs(self.targetX-0.5)>0.1):
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
 
+
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
+  # Using the data from all the subscribers, call the robot's services to move the end effector
+  def move_towards(self):
+    if self.readyToMove==True: # If the robot state is not moving
+      print(self.targetArea)
+      if (abs(self.targetArea)<20000 and abs(self.targetArea)>1000):
+        self.jointRequest.position[1]=self.jointPose[1]+(0.25)
+        self.jointRequest.position[2]=self.jointPose[2]-(0.25)
+      if (abs(self.targetArea)>20000):
+        self.jointRequest.position[1]=self.jointPose[1]-(0.25)
+        self.jointRequest.position[2]=self.jointPose[2]+(0.25)
+      if (abs(self.targetArea)==20000):
+        self.jointRequest.position[1]=self.jointPose[1]
+
+      if (abs(self.targetY-0.5)>0.1):
+        self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
+
+      if (abs(self.targetX-0.5)>0.1):
+        self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
+
+
+      # This command sends the message to the robot
+      self.setPose(str(),self.jointRequest,1.0)
+      rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
 
   # Find the normalised XY co-ordinate of a cube
@@ -160,7 +149,6 @@ class cubeTracker:
     area=[]
     coX=[]
     coY=[]
-    coZ=[]
 
     # Get the red cubes
     for c in range(len(data.cubes)):
@@ -168,30 +156,30 @@ class cubeTracker:
         area.append(data.cubes[c].area)
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
-        coZ.append(data.cubes[c].normalisedCoordinateZ)
-        #print(coX)
-        #print(coZ)
+
+
 
     # Find the biggest red cube
     if (len(area))>0:
       index_max = max(range(len(area)), key=area.__getitem__)
       self.targetX=coX[index_max]
       self.targetY=coY[index_max]
-      self.targetZ=coZ[index_max]
-    else: # If you dont find a target, report the centre of the image to keep the camera still
+      self.targetArea=area[index_max]
+      self.previous_area = area[index_max-1]
+    else: # If you dont find a target, report the centre of the image to keep the camera still 
+      # ADD PIVOT CODE
       self.targetX=0.5
       self.targetY=0.5
-      self.targetZ=0.5
+
 
 # Main 
 def main(args):
-  
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
   try:
-    #rospy.spin()
     while not rospy.is_shutdown():
       ic.aimCamera() # This is the actual code which controls the robot
+      ic.move_towards()
   except KeyboardInterrupt:
     print("Shutting down")
 
