@@ -106,10 +106,10 @@ class cubeTracker:
     if self.readyToMove==True: # If the robot state is not moving
 
       # Extremely simple - aim towards the target using joints [0] and [3]
-      if (abs(self.targetY-0.5)>0.1 and self.jointPose[3] < 1.9):
+      if (abs(self.targetY-0.5)>0.1):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
 
-      if (abs(self.targetX-0.5)>0.1 and self.jointPose[0] > -3.14):
+      if (abs(self.targetX-0.5)>0.1):
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
 
     
@@ -118,53 +118,56 @@ class cubeTracker:
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
-def fk():
-  # Define the link lengths of the robot arm
-  L1 = 1
-  L2 = 2
-  L3 = 3
-  L4 = 4
-  L5 = 5
+  def fk(self):
+    # Define the link lengths of the robot arm
+    L1 = 0
+    L2 = 0.077
+    L3 = 0.13
+    L4 = 0.124
+    L5 = 0.126
 
-  # Define the joint angles of the robot arm
-  theta1 = math.radians(30)
-  theta2 = math.radians(60)
-  theta3 = math.radians(-90)
-  theta4 = math.radians(45)
-  theta5 = math.radians(-30)
+    # Define the joint angles of the robot arm
+    theta1 = self.jointPose[0]
+    theta2 = self.jointPose[1]
+    theta3 = self.jointPose[2]
+    theta4 = self.jointPose[3]
+    theta5 = self.jointPose[4]
 
-  # Define the transformation matrices for each joint
-  T1 = np.array([[math.cos(theta1), -math.sin(theta1), 0, 0],
-                 [math.sin(theta1), math.cos(theta1), 0, 0],
-                 [0, 0, 1, 0],
-                 [0, 0, 0, 1]])
+    # Define the transformation matrices for each joint
+    T1 = np.array([[math.cos(theta1), -math.sin(theta1), 0, 0],
+                  [math.sin(theta1), math.cos(theta1), 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])
 
-  T2 = np.array([[math.cos(theta2), -math.sin(theta2), 0, L2],
-                 [math.sin(theta2), math.cos(theta2), 0, 0],
-                 [0, 0, 1, 0],
-                 [0, 0, 0, 1]])
+    T2 = np.array([[math.cos(theta2), -math.sin(theta2), 0, L2],
+                  [math.sin(theta2), math.cos(theta2), 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])
 
-  T3 = np.array([[math.cos(theta3), -math.sin(theta3), 0, L3],
-                 [math.sin(theta3), math.cos(theta3), 0, 0],
-                 [0, 0, 1, 0],
-                 [0, 0, 0, 1]])
+    T3 = np.array([[math.cos(theta3), -math.sin(theta3), 0, L3],
+                  [math.sin(theta3), math.cos(theta3), 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])
 
-  T4 = np.array([[math.cos(theta4), -math.sin(theta4), 0, L4],
-                 [math.sin(theta4), math.cos(theta4), 0, 0],
-                 [0, 0, 1, 0],
-                 [0, 0, 0, 1]])
+    T4 = np.array([[math.cos(theta4), -math.sin(theta4), 0, L4],
+                  [math.sin(theta4), math.cos(theta4), 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])
 
-  T5 = np.array([[math.cos(theta5), -math.sin(theta5), 0, L5],
-                 [math.sin(theta5), math.cos(theta5), 0, 0],
-                 [0, 0, 1, 0],
-                 [0, 0, 0, 1]])
+    T5 = np.array([[math.cos(theta5), -math.sin(theta5), 0, L5],
+                  [math.sin(theta5), math.cos(theta5), 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 0, 0, 1]])
 
-  # Calculate the transformation matrix from the base to the end effector
-  T = T1.dot(T2).dot(T3).dot(T4).dot(T5)
+    # Calculate the transformation matrix from the base to the end effector
+    T = T1.dot(T2).dot(T3).dot(T4).dot(T5)
 
-  # Extract the position and orientation of the end effector
-  position = T[:3, 3]
-  orientation = T[:3, :3]
+    # Extract the position and orientation of the end effector
+    position = T[:3, 3]
+    orientation = T[:3, :3]
+    print(position)
+    print(' ')
+    print(orientation)
 
   # Find the normalised XY co-ordinate of a cube
   def getTarget(self,data):
@@ -200,12 +203,14 @@ def fk():
 def main(args):
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
-  try:
-    while not rospy.is_shutdown():
-      ic.aimCamera()
-      ic.move_towards()
-  except KeyboardInterrupt:
-    print("Shutting down")
+  ic.fk()
+  #try:
+  #  while not rospy.is_shutdown():
+      #ic.aimCamera()
+      #ic.move_towards()
+      
+  #except KeyboardInterrupt:
+  #  print("Shutting down")
 
 if __name__ == '__main__':
     main(sys.argv)
