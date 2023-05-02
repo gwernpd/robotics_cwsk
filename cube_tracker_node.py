@@ -18,7 +18,11 @@ from open_manipulator_msgs.msg import OpenManipulatorState
 from open_manipulator_msgs.msg import JointPosition
 from open_manipulator_msgs.srv import SetJointPosition
 from open_manipulator_msgs.srv import GetJointPosition
+central = True
 test = True
+pick_up = False
+back_home = False
+
 
 class cubeTracker:
 
@@ -27,6 +31,7 @@ class cubeTracker:
     # Where the block is in the image (start at the centre)
     self.targetX=0.5
     self.targetY=0.5
+    self.targetZ=0.1
     self.targetArea=0
     self.previous_area=0
 
@@ -68,7 +73,7 @@ class cubeTracker:
     # Close the gripper
     self.gripperRequest=JointPosition()
     self.gripperRequest.joint_name=["gripper"]  
-    self.gripperRequest.position=[-0.01]# -0.01 represents closed
+    self.gripperRequest.position=[0.01]# -0.01 represents closed
     self.setGripper(str(),self.gripperRequest,1.0)
 
     rospy.sleep(1) # Wait for the gripper to close
@@ -76,7 +81,7 @@ class cubeTracker:
     # Send the robot "home"
     self.jointRequest=JointPosition()
     self.jointRequest.joint_name=["joint1","joint2","joint3","joint4"]  
-    self.jointRequest.position=[0.0,-1.05,0.357,1.8]
+    self.jointRequest.position=[0.0,-1.05,0.35,1.8]
     self.setPose(str(),self.jointRequest,1.0)
 
     rospy.sleep(1) # Wait for the arm to stand up
@@ -103,105 +108,61 @@ class cubeTracker:
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
   def aimCamera(self):
+    global central
     if self.readyToMove==True: # If the robot state is not moving
 
       # Extremely simple - aim towards the target using joints [0] and [3]
-      if (abs(self.targetY-0.5)>0.1):
-        self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
+      if (abs(self.targetY-0.58)>0.1):
+        self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.85)
+        central = True
 
-      if (abs(self.targetX-0.5)>0.1):
-        self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
+      if (abs(self.targetX-0.55)>0.1):
+        self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.55)
+        central = True
 
-    
+      
 
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
+  
+  
+  def move_towards(self):
+      global central, test, pick_up
+      if self.readyToMove==True: # If the robot state is not moving
+        print(self.targetArea)
+        if self.targetArea < 60000 and test==True:
+          self.jointRequest.position[1]=self.jointPose[1]+0.1
+        if self.targetArea > 60000:
+        
+          central=False
+          test = False
+          pick_up = True
 
-  def kinematics(self):
-    # Define the link lengths of the robot arm
-    L1 = 0
-    L2 = 0.077
-    L3 = 0.13
-    L4 = 0.124
-    L5 = 0.126
 
-    # Define the joint angles of the robot arm
-    theta1 = self.jointPose[0]
-    theta2 = self.jointPose[1]
-    theta3 = self.jointPose[2]
-    theta4 = self.jointPose[3]
-    theta5 = self.jointPose[4]
+        # This command sends the message to the robot
+        self.setPose(str(),self.jointRequest,1.0)
+        rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
-    # Define the transformation matrices for each joint
-    T1 = np.array([[math.cos(theta1), -math.sin(theta1), 0, 0],
-                  [math.sin(theta1), math.cos(theta1), 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]])
+  def calc_Z(self):
+    distance = 0.233*math.tan(self.jointPose[3])
+    #print(distance)
 
-    T2 = np.array([[math.cos(theta2), -math.sin(theta2), 0, L2],
-                  [math.sin(theta2), math.cos(theta2), 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]])
+  def picking_up(self):
+    global pick_up, back_home
+    if self.readyToMove==True:
+      self.jointRequest.position[2]=self.jointPose[2]-0.6
+      self.jointRequest.position[1]=self.jointPose[1]+0.5
+      self.gripperRequest.position=[-0.01]# -0.01 represents closed
+      self.setGripper(str(),self.gripperRequest,1.0)
+      pick_up = False
+      #back_home = True
 
-    T3 = np.array([[math.cos(theta3), -math.sin(theta3), 0, L3],
-                  [math.sin(theta3), math.cos(theta3), 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]])
-
-    T4 = np.array([[math.cos(theta4), -math.sin(theta4), 0, L4],
-                  [math.sin(theta4), math.cos(theta4), 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]])
-
-    T5 = np.array([[math.cos(theta5), -math.sin(theta5), 0, L5],
-                  [math.sin(theta5), math.cos(theta5), 0, 0],
-                  [0, 0, 1, 0],
-                  [0, 0, 0, 1]])
-
-    # Calculate the transformation matrix from the base to the end effector
-    T = T1.dot(T2).dot(T3).dot(T4).dot(T5)
-
-    # Extract the position and orientation of the end effector
-    position = T[:3, 3]
-    orientation = T[:3, :3]
-    print(position)
-    print(' ')
-    print(orientation)
-    print(' ')
-    
-    # Calculate the joint angles for the first three joints using the geometric inverse kinematics method
-    d = np.linalg.norm(position[:2])
-    theta1 = math.atan2(position[1], position[0])
-    theta2 = math.acos((L2**2 - L3**2 + d**2) / (2 * L2 * d)) + math.atan2(position[2] - L1, d)
-    theta3 = math.acos((L2**2 + L3**2 - d**2) / (2 * L2 * L3))
-
-    # Calculate the rotation matrix for the first three joints
-    R0_3 = np.array([[math.cos(theta1) * math.cos(theta2 + theta3), -math.sin(theta1), math.cos(theta1) * math.sin(theta2 + theta3)],
-                      [math.sin(theta1) * math.cos(theta2 + theta3), math.cos(theta1), math.sin(theta1) * math.sin(theta2 + theta3)],
-                      [-math.sin(theta2 + theta3), 0, math.cos(theta2 + theta3)]])
-
-    # Calculate the rotation matrix for the last two joints
-    R3_5 = np.linalg.inv(R0_3).dot(orientation)
-
-    # Calculate the joint angles for the last two joints using the geometric inverse kinematics method
-    theta5 = math.atan2(R3_5[1, 0], R3_5[0, 0])
-    theta4 = math.atan2(-R3_5[2, 0], R3_5[0, 0] * math.cos(theta5) + R3_5[1, 0] * math.sin(theta5))
-
-    # Convert the joint angles to degrees
-    theta1 = math.degrees(theta1)
-    theta2 = math.degrees(theta2)
-    theta3 = math.degrees(theta3)
-    theta4 = math.degrees(theta4)
-    theta5 = math.degrees(theta5)
-
-    # Print the joint angles
-    print("Joint angles:")
-    print("Theta1: ", theta1)
-    print("Theta2: ", theta2)
-    print("Theta3: ", theta3)
-    print("Theta4: ", theta4)
-    print("Theta5: ", theta5)
+  def go_home(self):
+    self.jointRequest.position[0] = 0
+    self.jointRequest.position[1] = 0
+    self.jointRequest.position[2] = 0
+    self.jointRequest.position[3] = 0
 
   # Find the normalised XY co-ordinate of a cube
   def getTarget(self,data):
@@ -210,6 +171,7 @@ class cubeTracker:
     area=[]
     coX=[]
     coY=[]
+
 
     # Get the red cubes
     for c in range(len(data.cubes)):
@@ -237,14 +199,20 @@ class cubeTracker:
 def main(args):
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
-  ic.kinematics()
-  #try:
-  #  while not rospy.is_shutdown():
-      #ic.aimCamera()
-      #ic.move_towards()
+
+  try:
+    while not rospy.is_shutdown():
+      if central == True:
+        ic.aimCamera()
+        ic.calc_Z()
+      ic.move_towards()
+      if pick_up == True:
+        ic.picking_up()
+      if back_home == True:
+        ic.go_home()
       
-  #except KeyboardInterrupt:
-  #  print("Shutting down")
+  except KeyboardInterrupt:
+    print("Shutting down")
 
 if __name__ == '__main__':
     main(sys.argv)
