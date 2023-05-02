@@ -118,7 +118,7 @@ class cubeTracker:
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
-  def fk(self):
+  def kinematics(self):
     # Define the link lengths of the robot arm
     L1 = 0
     L2 = 0.077
@@ -168,6 +168,40 @@ class cubeTracker:
     print(position)
     print(' ')
     print(orientation)
+    print(' ')
+    
+    # Calculate the joint angles for the first three joints using the geometric inverse kinematics method
+    d = np.linalg.norm(position[:2])
+    theta1 = math.atan2(position[1], position[0])
+    theta2 = math.acos((L2**2 - L3**2 + d**2) / (2 * L2 * d)) + math.atan2(position[2] - L1, d)
+    theta3 = math.acos((L2**2 + L3**2 - d**2) / (2 * L2 * L3))
+
+    # Calculate the rotation matrix for the first three joints
+    R0_3 = np.array([[math.cos(theta1) * math.cos(theta2 + theta3), -math.sin(theta1), math.cos(theta1) * math.sin(theta2 + theta3)],
+                      [math.sin(theta1) * math.cos(theta2 + theta3), math.cos(theta1), math.sin(theta1) * math.sin(theta2 + theta3)],
+                      [-math.sin(theta2 + theta3), 0, math.cos(theta2 + theta3)]])
+
+    # Calculate the rotation matrix for the last two joints
+    R3_5 = np.linalg.inv(R0_3).dot(orientation)
+
+    # Calculate the joint angles for the last two joints using the geometric inverse kinematics method
+    theta5 = math.atan2(R3_5[1, 0], R3_5[0, 0])
+    theta4 = math.atan2(-R3_5[2, 0], R3_5[0, 0] * math.cos(theta5) + R3_5[1, 0] * math.sin(theta5))
+
+    # Convert the joint angles to degrees
+    theta1 = math.degrees(theta1)
+    theta2 = math.degrees(theta2)
+    theta3 = math.degrees(theta3)
+    theta4 = math.degrees(theta4)
+    theta5 = math.degrees(theta5)
+
+    # Print the joint angles
+    print("Joint angles:")
+    print("Theta1: ", theta1)
+    print("Theta2: ", theta2)
+    print("Theta3: ", theta3)
+    print("Theta4: ", theta4)
+    print("Theta5: ", theta5)
 
   # Find the normalised XY co-ordinate of a cube
   def getTarget(self,data):
@@ -203,7 +237,7 @@ class cubeTracker:
 def main(args):
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
-  ic.fk()
+  ic.kinematics()
   #try:
   #  while not rospy.is_shutdown():
       #ic.aimCamera()
