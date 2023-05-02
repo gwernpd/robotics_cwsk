@@ -106,41 +106,42 @@ class cubeTracker:
     if self.readyToMove==True: # If the robot state is not moving
 
       # Extremely simple - aim towards the target using joints [0] and [3]
-      if (abs(self.targetY-0.5)>0.1):
+      if (abs(self.targetY-0.5)>0.1 and self.jointPose[3] < 1.9):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
 
-      if (abs(self.targetX-0.5)>0.1):
+      if (abs(self.targetX-0.5)>0.1 and self.jointPose[0] > -3.14):
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
 
+    
 
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
+  '''
   def move_towards(self):
     if self.readyToMove==True: # If the robot state is not moving
       print(self.targetArea)
-      if (abs(self.targetArea)<20000 and abs(self.targetArea)>1000):
+      print(self.jointPose[2])
+      if (abs(self.targetArea)<80000 and abs(self.targetArea)>1000 and self.jointPose[1] < 1.2):
         self.jointRequest.position[1]=self.jointPose[1]+(0.25)
+      if (abs(self.targetArea)<80000 and abs(self.targetArea)>1000 and self.jointPose[2] > -1.3):
         self.jointRequest.position[2]=self.jointPose[2]-(0.25)
-      if (abs(self.targetArea)>20000):
+      if (abs(self.targetArea)>100000) and self.jointPose[1] > -1.5 :
         self.jointRequest.position[1]=self.jointPose[1]-(0.25)
+      if (abs(self.targetArea)>100000) and self.jointPose[2] < 1:
         self.jointRequest.position[2]=self.jointPose[2]+(0.25)
-      if (abs(self.targetArea)==20000):
-        self.jointRequest.position[1]=self.jointPose[1]
-
-      if (abs(self.targetY-0.5)>0.1):
+      if (abs(self.targetArea)>80000 and abs(self.targetArea)<100000 and self.jointPose[3] > -1.0):
+        self.jointRequest.position[3]=self.jointPose[3]-(0.4)
+      if (abs(self.targetY-0.5)>0.1 and self.jointPose[3] < 1.9):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
-
-      if (abs(self.targetX-0.5)>0.1):
+      if (abs(self.targetX-0.5)>0.1 and self.jointPose[0] > -3.14):
         self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
-
-
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
-
+'''
 
   # Find the normalised XY co-ordinate of a cube
   def getTarget(self,data):
@@ -178,7 +179,7 @@ def main(args):
   rospy.init_node('cube_tracker', anonymous=True)
   try:
     while not rospy.is_shutdown():
-      ic.aimCamera() # This is the actual code which controls the robot
+      ic.aimCamera()
       ic.move_towards()
   except KeyboardInterrupt:
     print("Shutting down")
