@@ -13,6 +13,8 @@ from cube_spotter.msg import cubeArray
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np;
 
+from open_manipulator_msgs.msg import *
+from open_manipulator_msgs.srv import *
 
 
 class Cube:
