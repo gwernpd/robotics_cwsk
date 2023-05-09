@@ -13,11 +13,20 @@ from cube_spotter.msg import cubeArray
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np;
 
-class cube:
-  def __init__(self):
-    self.centreX=0.0
-    self.centreY=0.0
-    self.area=0.0
+
+
+class Cube:
+  def __init__(self, centreX, centreY, width, length, height):
+        global cube_width_pixels
+        self.centreX = centreX
+        self.centreY = centreY
+        self.width = width
+        cube_width_pixels = width
+        self.length = length
+        self.height = height
+
+
+
 
 # Function for finding boxes and drawing on the output image
 def mask2box(mask,colour,canvas,minArea):
@@ -36,7 +45,7 @@ def mask2box(mask,colour,canvas,minArea):
 
     
   for i, c in enumerate(minRect):
-    tempCube=cube()  
+    tempCube=Cube(0, 0, 0, 0, 0)
     box = cv2.boxPoints(minRect[i])
     centre=minRect[i][0]
     size=minRect[i][1]
@@ -44,6 +53,7 @@ def mask2box(mask,colour,canvas,minArea):
     tempCube.centreY=centre[1]
     tempCube.area=size[0]*size[1]
     cubeList[i]=tempCube
+
     box = np.intp(box) #np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
     cv2.drawContours(canvas, [box], 0, colour)
 
@@ -85,17 +95,20 @@ class cubeSpotter:
     # R = Val
 
     # Yellow - H=30
-    self.hsvYellowLow=(20.0000, 100.0000, 150.0000)
-    self.hsvYellowHigh=(30.0000, 255.0000, 255.0000)
+    #self.hsvYellowLow=(20, 100, 100)
+    #self.hsvYellowHigh=(30, 255, 255)
 
     # Blue
-    self.hsvBlueLow=(95.0000, 150.0000, 50.0000)
-    self.hsvBlueHigh=(110,255,255)
+    #self.hsvBlueLow=(100, 150, 0)
+    #self.hsvBlueHigh=(140,255,255)
 
     # Red - wraps around 0, but the red blocks are mostly in the 0-10 range
-    self.hsvRedLow1=(0.0000, 100.0000, 100.0000)
-    self.hsvRedHigh1=(15,255,255)
-    self.hsvRedLow2=(177.0000, 100.0000, 100.0000)
+    self.hsvRedLow1=(0, 50, 50)
+    self.hsvRedHigh1=(10,255,255)
+
+
+
+    self.hsvRedLow2=(170, 50, 50)
     self.hsvRedHigh2=(180,255,255)
 
     # Use the openCV bridge
@@ -122,10 +135,10 @@ class cubeSpotter:
     hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
     # Create a mask for each colour being tracked
-    # mask = cv2.inRange(hsv_image, darkerColour, brighterColour)
+    #mask = cv2.inRange(hsv_image, darkerColour, brighterColour)
 
-    maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
-    maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
+    #maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
+    #maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
 
     # Red is the difficult case, as it wraps around the zero point
 
@@ -134,30 +147,31 @@ class cubeSpotter:
     maskRed = maskRed1+maskRed2
 
     # Erode then Dilate the image to remove small elements
-    erodedMaskRed=erode(maskRed, 11)
-    erodedMaskBlue=erode(maskBlue, 11)
-    erodedMaskYellow=erode(maskYellow, 11)    
+    erodedMaskRed=erode(maskRed, 4)
+    #erodedMaskBlue=erode(maskBlue, 11)
+    #erodedMaskYellow=erode(maskYellow, 11)    
     
-    dilatedMaskRed=dilate(erodedMaskRed, 11)
-    dilatedMaskBlue=dilate(erodedMaskBlue, 11)
-    dilatedMaskYellow=dilate(erodedMaskYellow, 11)
+    dilatedMaskRed=dilate(erodedMaskRed, 5)
+    #dilatedMaskBlue=dilate(erodedMaskBlue, 11)
+    #dilatedMaskYellow=dilate(erodedMaskYellow, 11)
 
 
     # Minimum area of objects to find in pixels
-    minArea=1000
+    minArea=300
 
     # Draw onto the original image
     canvas=cv_image
 
     # Find the objects in each mask - colours are BGR - draw on the "canvas"
-    canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
-    canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
-    canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
 
+    canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
+    #canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
+    #canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
+    cv_image[240,320] = [0,255,0]
 
     cv2.imshow("Detected Objects", cv_image)
     cv2.waitKey(3) # This redraws the window
-'''
+
     # Get the size of the image to normalise the output
     (rows,cols,channels) = cv_image.shape
 
@@ -169,24 +183,25 @@ class cubeSpotter:
       tempCube.cube_colour='red'
       tempCube.area=cubeListRed[c].area
       tempCube.normalisedCoordinateX=cubeListRed[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows
+      tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows 
+           
       returnCubeArray.cubes.append(tempCube)
 
-    for c in range(len(cubeListBlue)):
-      tempCube=cubeData()
-      tempCube.cube_colour='blue'
-      tempCube.area=cubeListBlue[c].area
-      tempCube.normalisedCoordinateX=cubeListBlue[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListBlue[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)
+   # for c in range(len(cubeListBlue)):
+   #   tempCube=cubeData()
+   #   tempCube.cube_colour='blue'
+   #   tempCube.area=cubeListBlue[c].area
+   #   tempCube.normalisedCoordinateX=cubeListBlue[c].centreX/cols
+   #   tempCube.normalisedCoordinateY=cubeListBlue[c].centreY/rows
+   #   returnCubeArray.cubes.append(tempCube)
 
-    for c in range(len(cubeListYellow)):
-      tempCube=cubeData()
-      tempCube.cube_colour='yellow'
-      tempCube.area=cubeListYellow[c].area
-      tempCube.normalisedCoordinateX=cubeListYellow[c].centreX/cols
-      tempCube.normalisedCoordinateY=cubeListYellow[c].centreY/rows
-      returnCubeArray.cubes.append(tempCube)   
+   # for c in range(len(cubeListYellow)):
+   #   tempCube=cubeData()
+   #   tempCube.cube_colour='yellow'
+   #   tempCube.area=cubeListYellow[c].area
+   #   tempCube.normalisedCoordinateX=cubeListYellow[c].centreX/cols
+   #   tempCube.normalisedCoordinateY=cubeListYellow[c].centreY/rows
+   #   returnCubeArray.cubes.append(tempCube)   
 
     try:
       self.cube_pub.publish(returnCubeArray)
@@ -206,4 +221,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
-'''
