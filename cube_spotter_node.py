@@ -48,6 +48,7 @@ def mask2box(mask,colour,canvas,minArea):
     
   for i, c in enumerate(minRect):
     tempCube=Cube(0, 0, 0, 0, 0)
+    tempCube=Cube(0, 0, 0, 0, 0)
     box = cv2.boxPoints(minRect[i])
     centre=minRect[i][0]
     size=minRect[i][1]
@@ -55,6 +56,7 @@ def mask2box(mask,colour,canvas,minArea):
     tempCube.centreY=centre[1]
     tempCube.area=size[0]*size[1]
     cubeList[i]=tempCube
+
 
     box = np.intp(box) #np.intp: Integer used for indexing (same as C ssize_t; normally either int32 or int64)
     cv2.drawContours(canvas, [box], 0, colour)
@@ -99,8 +101,12 @@ class cubeSpotter:
     # Yellow - H=30
     #self.hsvYellowLow=(20, 100, 100)
     #self.hsvYellowHigh=(30, 255, 255)
+    #self.hsvYellowLow=(20, 100, 100)
+    #self.hsvYellowHigh=(30, 255, 255)
 
     # Blue
+    #self.hsvBlueLow=(100, 150, 0)
+    #self.hsvBlueHigh=(140,255,255)
     #self.hsvBlueLow=(100, 150, 0)
     #self.hsvBlueHigh=(140,255,255)
 
@@ -141,6 +147,8 @@ class cubeSpotter:
 
     #maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
     #maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
+    #maskYellow = cv2.inRange(hsv_image, self.hsvYellowLow, self.hsvYellowHigh)
+    #maskBlue = cv2.inRange(hsv_image, self.hsvBlueLow, self.hsvBlueHigh)
 
     # Red is the difficult case, as it wraps around the zero point
 
@@ -166,6 +174,7 @@ class cubeSpotter:
 
     # Find the objects in each mask - colours are BGR - draw on the "canvas"
 
+
     canvas,cubeListRed = mask2box(dilatedMaskRed,(0,0,255),canvas,minArea)
     #canvas,cubeListBlue = mask2box(dilatedMaskBlue,(255,0,0),canvas,minArea)
     #canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
@@ -173,6 +182,7 @@ class cubeSpotter:
 
     cv2.imshow("Detected Objects", cv_image)
     cv2.waitKey(3) # This redraws the window
+
 
     # Get the size of the image to normalise the output
     (rows,cols,channels) = cv_image.shape

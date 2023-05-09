@@ -22,12 +22,14 @@ detected = False
 
 
 class cubeTracker:
-
   def __init__(self):
     
     # Where the block is in the image (start at the centre)
     self.targetX=0.5
     self.targetY=0.5
+    self.targetZ=0.1
+    self.targetArea=0
+    self.previous_area=0
     self.targetZ=0.1
     self.targetArea=0
     self.previous_area=0
@@ -217,12 +219,15 @@ class cubeTracker:
     coY=[]
 
 
+
     # Get the red cubes
     for c in range(len(data.cubes)):
       if (data.cubes[c].cube_colour=='red'):
         area.append(data.cubes[c].area)
         coX.append(data.cubes[c].normalisedCoordinateX)
         coY.append(data.cubes[c].normalisedCoordinateY)
+
+
 
 
 
