@@ -21,6 +21,13 @@ from open_manipulator_msgs.srv import *
 detected = False
 
 
+
+# Assuming the real width of the block (in meters)
+REAL_WIDTH = 0.03 # Adjust this value according to your block
+
+# Assuming the focal length of the camera (in pixels)
+FOCAL_LENGTH = 850  # You may need to calibrate your camera to find this value
+
 class cubeTracker:
   def __init__(self):
     
@@ -231,20 +238,17 @@ class cubeTracker:
 
 
 
-    # Find the biggest red cube
     if (len(area))>0:
-      global detected
       index_max = max(range(len(area)), key=area.__getitem__)
       self.targetX=coX[index_max]
       self.targetY=coY[index_max]
       self.targetArea=area[index_max]
       self.previous_area = area[index_max-1]
-      if self.targetArea > 0:
-        detected = True
-    else: # If you dont find a target, report the centre of the image to keep the camera still 
-      # ADD PIVOT CODE
-      self.targetX=0.5
-      self.targetY=0.5
+      
+      # Estimate depth (Z-coordinate)
+      perceived_width = math.sqrt(self.targetArea)  # Assuming the block is square
+      self.targetZ = (REAL_WIDTH * FOCAL_LENGTH) / perceived_width
+      print(self.targetZ)
 
 
 # Main 
@@ -255,11 +259,11 @@ def main(args):
   try:
     while not rospy.is_shutdown():
       if detected == False:
-        ic.search(joint1=joint1)
+        #ic.search(joint1=joint1)
         joint1 += 0.1
       if detected == True:
         print('Detected')
-        ic.pick_up()
+        #ic.pick_up()
       #ic.move_towards()
       #if pick_up == True:
       #  ic.picking_up()
