@@ -136,6 +136,12 @@ class cubeTracker:
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
   def pick_up(self,result):
+    not_at_target = True
+    xchange = 0
+    ychange = 0
+    zchange = 0
+
+
     print("Picking Up")
     self.setPose = rospy.ServiceProxy('goal_joint_space_path_to_kinematics_pose', SetKinematicsPose)
     self.poseRequest=KinematicsPose()
@@ -144,6 +150,109 @@ class cubeTracker:
     self.poseRequest.pose.position.z = 0.185
     self.setPose(str(),'gripper',self.poseRequest,3.0)
     rospy.sleep(1)
+
+    xincrement = 5
+    yincrement = 5
+    zincrement = 5
+
+    uncertainty = 0.05
+    
+
+    xdiff= abs((0.135 - result[0])/xincrement)
+    ydiff= abs((0 - result[1])/yincrement)
+    zdiff= abs((0.185 - result[2])/zincrement)
+    while not_at_target==True:
+      print("Result:")
+      print(result)
+      
+      if result[0] < 0:
+        if self.poseRequest.pose.position.x > result[0] + uncertainty:
+          xchange = -xdiff
+        elif self.poseRequest.pose.position.x < result[0] + uncertainty:
+          xchange = 0  
+      if result[0] > 0:
+        if self.poseRequest.pose.position.x < result[0] - uncertainty:
+          xchange = xdiff
+        elif self.poseRequest.pose.position.x > result[0] - uncertainty:
+          xchange = 0
+      if result[1] < 0:
+        if self.poseRequest.pose.position.y > result[1] + uncertainty:
+          ychange = -ydiff
+        elif self.poseRequest.pose.position.y < result[1] + uncertainty:
+          ychange = 0
+      if result[1] > 0:
+        if self.poseRequest.pose.position.y < result[1] - uncertainty:
+          ychange = ydiff
+        elif self.poseRequest.pose.position.y > result[1] - uncertainty:
+          ychange = 0
+      if result[2] < 0:
+        if self.poseRequest.pose.position.z > result[2] + uncertainty:
+          zchange = -zdiff
+        if self.poseRequest.pose.position.z < result[2] + uncertainty:
+          zchange = 0
+      if result[2] > 0:
+        if self.poseRequest.pose.position.z < result[2] - uncertainty:
+          zchange = zdiff
+        elif self.poseRequest.pose.position.z > result[2] - uncertainty:
+          zchange = 0
+      
+
+
+
+      
+      if xchange==0 and ychange==0 and zchange==0:
+        not_at_target=False
+      print("Current X:")
+      print(self.poseRequest.pose.position.x)
+      print("Current yY:")
+      print(self.poseRequest.pose.position.y)
+      print("Current Z:")
+      print(self.poseRequest.pose.position.z)
+      print("xchange:")
+      print(xchange)
+      print("ychange:")
+      print(ychange)
+      print("zchange:")
+      print(zchange)
+      try:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x + xchange
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z
+        self.setPose(str(),'gripper',self.poseRequest,5)
+        rospy.sleep(5)
+      except:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x -xchange/2
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z
+
+      try:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y + ychange
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z
+        self.setPose(str(),'gripper',self.poseRequest,5)
+        rospy.sleep(5)
+      except:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y - ychange/2
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z
+
+      try:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z + zchange
+        self.setPose(str(),'gripper',self.poseRequest,5)
+        rospy.sleep(5)
+      except:
+        self.poseRequest.pose.position.x = self.poseRequest.pose.position.x
+        self.poseRequest.pose.position.y = self.poseRequest.pose.position.y
+        self.poseRequest.pose.position.z = self.poseRequest.pose.position.z - zchange/2
+
+      print("New X:")
+      print(self.poseRequest.pose.position.x)
+      print("New Y:")
+      print(self.poseRequest.pose.position.y)
+      print("New Z:")
+      print(self.poseRequest.pose.position.z)
     '''
 
     self.poseRequest=KinematicsPose()
@@ -216,19 +325,24 @@ class cubeTracker:
     #self.poseRequest.pose.position.z = 0.18
     #self.setPose(str(),'gripper',self.poseRequest,2.0)
     #rospy.sleep(2)
-    self.poseRequest=KinematicsPose()
-    self.poseRequest.pose.position.x = result[0]/2
-    self.poseRequest.pose.position.y = result[1]/2
-    self.poseRequest.pose.position.z = result[2]/2
-    self.setPose(str(),'gripper',self.poseRequest,5)
-    rospy.sleep(5)
-    print(result)
-    self.poseRequest=KinematicsPose()
-    self.poseRequest.pose.position.x = result[0]
-    self.poseRequest.pose.position.y = result[1]
-    self.poseRequest.pose.position.z = result[2]
-    self.setPose(str(),'gripper',self.poseRequest,5)
-    rospy.sleep(5)
+    #print('1/2')
+    #self.poseRequest=KinematicsPose()
+    #self.poseRequest.pose.position.x = (0.135+result[0])/2
+    #self.poseRequest.pose.position.y = (0+result[1])/2
+    #self.poseRequest.pose.position.z = (0.185+result[2])/2
+    #self.setPose(str(),'gripper',self.poseRequest,5)
+    #rospy.sleep(5)
+
+    #print('1/2 done')
+    #print(result)
+    #self.poseRequest=KinematicsPose()
+    #self.poseRequest.pose.position.x = result[0] 
+    #self.poseRequest.pose.position.y = result[1]
+    #self.poseRequest.pose.position.z = result[2] 
+    #self.setPose(str(),'gripper',self.poseRequest,5)
+    #rospy.sleep(5)
+    #print('all done')
+    #print(result)
     #if self.readyToMove==True: # If the robot state is not moving
     #  print(self.targetY)
     #  # Extremely simple - aim towards the target using joints [0] and [3]
@@ -294,7 +408,10 @@ class cubeTracker:
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-
+        T_base_to_gripper = np.array([[0, 0, 1, 0],
+                              [1, 0, 0, 0],
+                              [0, 1, 0, 0.16],
+                              [0, 0, 0, 1]])
         # Convert the block coordinates to homogeneous coordinates
         block_coordinates_camera_frame = np.array([x, y, z, 1])
 
@@ -307,10 +424,13 @@ class cubeTracker:
     def base_grip():
         print("base_grip")
         # Define the transformation matrices
-        θ1 = -1.899
-        θ2 = -1.356
-        θ3 = 0.388
-        θ4 = 1.908
+        self.setPose = rospy.ServiceProxy('goal_joint_space_path', SetJointPosition)    
+        self.jointRequest=JointPosition()
+        self.jointRequest.joint_name=["joint1","joint2","joint3","joint4"] 
+        θ1 = 0
+        θ2 = -1.352
+        θ3 = 0.379
+        θ4 = 1.906
         d1 = 0.077
         a1 = 0
         a2 = 0.13
@@ -344,9 +464,9 @@ class cubeTracker:
     global result
     result = T04@block_coordinates_robot_frame 
     result = result[:3]
-    result[0] = result[0] + 0.6
-    result[1] = result[1] + 0.484
-    result[2] = result[2] - 1.587
+    result[0] = result[0]
+    result[1] = result[1]
+    result[2] = result[2]
     return result
 
 # Main 
@@ -362,7 +482,10 @@ def main(args):
         joint1 += 0.1
       #if detected == True:
       #  print('Detected')
+      print('just before pick up')
+      print(result)
       ic.pick_up(result)
+      break
       #ic.move_towards()
       #if pick_up == True:
       #  ic.picking_up()
