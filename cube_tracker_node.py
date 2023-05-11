@@ -23,8 +23,11 @@ from open_manipulator_msgs.srv import GetJointPosition
 switch = True
 ready_pick_up = False
 ready_place = False
-block1_done = False
+block_1 = False
+block_2 = False
 block_3 = False
+cube_colour = ''
+search = True
 class cubeTracker:
 
   def __init__(self):
@@ -73,9 +76,9 @@ class cubeTracker:
     self.jointRequest=JointPosition()
     self.jointRequest.joint_name=["joint1","joint2","joint3","joint4"]  
     self.jointRequest.position=[0.0,-0.5,0,2]
-    self.setPose(str(),self.jointRequest,1.0)
+    self.setPose(str(),self.jointRequest,2.0)
 
-    rospy.sleep(1) # Wait for the arm to stand up
+    rospy.sleep(2) # Wait for the arm to stand up
 
 
 
@@ -96,26 +99,43 @@ class cubeTracker:
     else:
       self.readyToMove=False
 
-  def search(self, joint1):
-    print('Searching...')
-    if joint1 < 0.8:
-      self.jointRequest.position=[joint1,-1.352,0.379,1.906]
-      self.setPose(str(), self.jointRequest,1.0)
-      rospy.sleep(1) #
+  def search(self, joint_1):
+    global counter, block_1, block_2, block_3, cube_colour, search
+    #print('Searching...')
+    #if joint_1 < 0.8:
+    #  self.jointRequest.position=[joint_1,-0.5,0,2]
+    #  self.setPose(str(), self.jointRequest,2.0)
+    #  rospy.sleep(1) #
+    if self.targetArea > 500:
+      search = False
+      if counter == 0:
+        block_1 = True
+        print(cube_colour)
+      if counter == 1:
+        block_1 = False
+        block_2 = True
+        print(cube_colour)
+      if counter == 2:
+        block_2 = False
+        block_3 = True
+        print(cube_colour)
 
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
   def centralise(self):
+    print('Centralising')
     if self.readyToMove==True: # If the robot state is not moving
-
       # Extremely simple - aim towards the target using joints [0] and [3]
-      if (abs(self.targetY-0.5)>0.09):
+      while (abs(self.targetY-0.5)>0.1):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
-      global switch
-      if switch == True:
-        if (abs(self.targetX-0.5)>0.09):
+      while (abs(self.targetX-0.5)>0.1):
           self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
-          switch = False
+      
+      #global switch
+      #if switch == True:
+      #  if (abs(self.targetX-0.5)>0.5):
+      #    self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
+      #    switch = False
 
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
@@ -123,17 +143,18 @@ class cubeTracker:
   
   
   def move_towards(self):
+    print('Moving towards')
     if self.readyToMove==True: # If the robot state is not moving
       print(self.targetArea)
 
       if abs(self.targetArea)<125000:
         self.jointRequest.position[1]=self.jointPose[1]+(0.1)
-        self.jointRequest.position[3]=self.jointPose[3]-(0.25)
+        self.jointRequest.position[3]=self.jointPose[3]-(0.15)
+        self.setPose(str(),self.jointRequest,1.0)
       
       if abs(self.targetArea)>125000:
         global ready_pick_up
         ready_pick_up = True
-
 
   def pick_procedure(self):
     print('picking_up')
@@ -147,36 +168,39 @@ class cubeTracker:
     ready_place = True
 
   def place_procedure(self):
-    self.jointRequest.position=[0.0,-0.5,0,2]
-    self.setPose(str(),self.jointRequest,1.0)
+    global search, joint_1
+    self.jointRequest.position=[joint_1,-0.189,-0.178,1.852]
+    self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
-    if block1_done == False and block_3 == False:
-      self.jointRequest.position=[-1.457,0.370,-0.267,1.671]
-      self.setPose(str(),self.jointRequest,1.0)
+    if block_1 == True:
+      self.jointRequest.position=[-1.457,0.470,-0.217,1.571]
+      self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-    if block1_done == True:
+      search = True
+    if block_2 == True:
       self.jointRequest.position=[-1.457,-0.5,-0.4,2]
-      self.setPose(str(),self.jointRequest,1.0)
+      self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
       self.jointRequest.position=[-1.457,0.017,-0.054,1.634]
-      self.setPose(str(),self.jointRequest,1.0)
+      self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
+      search = True
     if block_3 == True:
       self.jointRequest.position=[-1.457,-0.014,-0.497,1.980]
-      self.setPose(str(),self.jointRequest,1.0)
+      self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
       self.jointRequest.position=[-1.457,0.021,-0.206,1.717]
-      self.setPose(str(),self.jointRequest,1.0)
+      self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
     
     self.gripperRequest.position=[0.01]# -0.01 represents closed
     self.setGripper(str(),self.gripperRequest,1.0)
     rospy.sleep(2)
     self.jointRequest.position=[-1.457,-0.5,0,2]
-    self.setPose(str(),self.jointRequest,1.0)
+    self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
-    self.jointRequest.position=[0.0,-0.5,0,2]
-    self.setPose(str(),self.jointRequest,1.0)
+    self.jointRequest.position=[joint_1,-0.848,0.905,1.312]
+    self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
 
 
@@ -187,63 +211,62 @@ class cubeTracker:
     area=[]
     coX=[]
     coY=[]
-    global block1_done, block3
-    if block1_done == False:
-      # Get the red cubes
-      for c in range(len(data.cubes)):
-        if (data.cubes[c].cube_colour=='red'):
-          area.append(data.cubes[c].area)
-          coX.append(data.cubes[c].normalisedCoordinateX)
-          coY.append(data.cubes[c].normalisedCoordinateY)
-    if block1_done == True:
-      for c in range(len(data.cubes)):
-          if (data.cubes[c].cube_colour=='blue'):
-            area.append(data.cubes[c].area)
-            coX.append(data.cubes[c].normalisedCoordinateX)
-            coY.append(data.cubes[c].normalisedCoordinateY)
-    if block_3 == True:
-      for c in range(len(data.cubes)):
-          if (data.cubes[c].cube_colour=='yellow'):
-            area.append(data.cubes[c].area)
-            coX.append(data.cubes[c].normalisedCoordinateX)
-            coY.append(data.cubes[c].normalisedCoordinateY)
+    global block_1, block_2, block_3, cube_colour
+      # Get the cubes
+    for c in range(len(data.cubes)):
+      cube_colour = data.cubes[c].cube_colour
+      if (data.cubes[c].cube_colour==cube_colour):
+        area.append(data.cubes[c].area)
+        coX.append(data.cubes[c].normalisedCoordinateX)
+        coY.append(data.cubes[c].normalisedCoordinateY)
+
 
     # Find the biggest red cube
-    if (len(area))>0:
-      global detected
-      index_max = max(range(len(area)), key=area.__getitem__)
-      self.targetX=coX[index_max]
-      self.targetY=coY[index_max]
-      self.targetArea=area[index_max]
+    if (len(area))>1:
+      index_min = min(range(len(area)), key=area.__getitem__)
+      self.targetX=coX[index_min]
+      self.targetY=coY[index_min]
+      self.targetArea=area[index_min]
     else: # If you dont find a target, report the centre of the image to keep the camera still
       #self.previous_area = area[index_max-1]
       self.targetX=0.5
       self.targetY=0.5
 
 counter = 0
+joint_1 = -1.0
+search = True
 # Main 
 def main(args):
   ic = cubeTracker()
   rospy.init_node('cube_tracker', anonymous=True)
   try:
     while not rospy.is_shutdown():
-      global ready_pick_up, ready_place, block1_done, block_3, counter
-      if ready_pick_up == False:
-        ic.centralise() # This is the actual code which controls the robot
+      global ready_pick_up, ready_place, block_1, block_2, block_3, counter, switch, joint_1
+      if search == True:
+        ic.search(joint_1)
+        joint_1 = joint_1 + 0.3
+      if ready_pick_up == False and search ==False:
+        ic.centralise()
+        rospy.sleep(1)
         ic.move_towards()
       if ready_pick_up == True and ready_place ==False:
         ic.pick_procedure()
       if ready_place ==True:
         ic.place_procedure()
-        block1_done = True
+        block_2 = True
+        block_3 = False
+        block_1 = False
         ready_place = False
         ready_pick_up = False
+        switch = True
         counter+=1
         if counter == 2:
           block_3 = True
-          block1_done = False
+          block_2 = False
+          block_1 = False
           ready_place = False
           ready_pick_up = False
+          switch = True
         if counter ==3:
           break
 
