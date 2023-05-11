@@ -101,11 +101,11 @@ class cubeTracker:
 
   def search(self, joint_1):
     global counter, block_1, block_2, block_3, cube_colour, search
-    #print('Searching...')
-    #if joint_1 < 0.8:
-    #  self.jointRequest.position=[joint_1,-0.5,0,2]
-    #  self.setPose(str(), self.jointRequest,2.0)
-    #  rospy.sleep(1) #
+    print('Searching...')
+    if joint_1 < 0.8:
+      self.jointRequest.position=[joint_1,-1.352,0.379,1.906]
+      self.setPose(str(), self.jointRequest,2.0)
+      rospy.sleep(2) #
     if self.targetArea > 500:
       search = False
       if counter == 0:
@@ -123,19 +123,15 @@ class cubeTracker:
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
   def centralise(self):
-    print('Centralising')
-    if self.readyToMove==True: # If the robot state is not moving
+
       # Extremely simple - aim towards the target using joints [0] and [3]
-      while (abs(self.targetY-0.5)>0.1):
+      if (abs(self.targetY-0.5)>0.02):
         self.jointRequest.position[3]=self.jointPose[3]+(self.targetY-0.5)
-      while (abs(self.targetX-0.5)>0.1):
+      global switch
+      if switch == True:
+        if (abs(self.targetX-0.5)>0.1):
           self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
-      
-      #global switch
-      #if switch == True:
-      #  if (abs(self.targetX-0.5)>0.5):
-      #    self.jointRequest.position[0]=self.jointPose[0]-(self.targetX-0.5)
-      #    switch = False
+          switch = False
 
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
@@ -143,18 +139,21 @@ class cubeTracker:
   
   
   def move_towards(self):
-    print('Moving towards')
     if self.readyToMove==True: # If the robot state is not moving
       print(self.targetArea)
 
       if abs(self.targetArea)<125000:
-        self.jointRequest.position[1]=self.jointPose[1]+(0.1)
-        self.jointRequest.position[3]=self.jointPose[3]-(0.15)
-        self.setPose(str(),self.jointRequest,1.0)
+        try:
+          self.jointRequest.position[1]=(self.jointPose[1]+(0.2))
+          self.jointRequest.position[3]=self.jointPose[3]-(0.05)
+          self.jointRequest.position[2]=(self.jointPose[2]-(0.05))
+        except:
+          self.jointRequest.position[1]=(self.jointPose[1]+(0.15))
       
       if abs(self.targetArea)>125000:
         global ready_pick_up
         ready_pick_up = True
+
 
   def pick_procedure(self):
     print('picking_up')
@@ -173,7 +172,7 @@ class cubeTracker:
     self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
     if block_1 == True:
-      self.jointRequest.position=[-1.457,0.470,-0.217,1.571]
+      self.jointRequest.position=[-1.457,0.584,-0.502,1.607]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
       search = True
@@ -181,25 +180,25 @@ class cubeTracker:
       self.jointRequest.position=[-1.457,-0.5,-0.4,2]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,0.017,-0.054,1.634]
+      self.jointRequest.position=[-1.457,0.348,-0.328,1.6548]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
       search = True
     if block_3 == True:
-      self.jointRequest.position=[-1.457,-0.014,-0.497,1.980]
-      self.setPose(str(),self.jointRequest,2.0)
+      self.jointRequest.position=[-1.457,-0.014,-0.640,1.7]
+      self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,0.021,-0.206,1.717]
-      self.setPose(str(),self.jointRequest,2.0)
+      self.jointRequest.position=[-1.457,0.281,-0.419,1.669]
+      self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(2)
     
     self.gripperRequest.position=[0.01]# -0.01 represents closed
     self.setGripper(str(),self.gripperRequest,1.0)
     rospy.sleep(2)
     self.jointRequest.position=[-1.457,-0.5,0,2]
-    self.setPose(str(),self.jointRequest,2.0)
+    self.setPose(str(),self.jointRequest,1.0)
     rospy.sleep(2)
-    self.jointRequest.position=[joint_1,-0.848,0.905,1.312]
+    self.jointRequest.position=[joint_1,-1.352,0.379,1.906]
     self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
 
@@ -222,11 +221,12 @@ class cubeTracker:
 
 
     # Find the biggest red cube
-    if (len(area))>1:
-      index_min = min(range(len(area)), key=area.__getitem__)
-      self.targetX=coX[index_min]
-      self.targetY=coY[index_min]
-      self.targetArea=area[index_min]
+    if (len(area))>0:
+      global detected
+      index_max = max(range(len(area)), key=area.__getitem__)
+      self.targetX=coX[index_max]
+      self.targetY=coY[index_max]
+      self.targetArea=area[index_max]
     else: # If you dont find a target, report the centre of the image to keep the camera still
       #self.previous_area = area[index_max-1]
       self.targetX=0.5
@@ -245,9 +245,8 @@ def main(args):
       if search == True:
         ic.search(joint_1)
         joint_1 = joint_1 + 0.3
-      if ready_pick_up == False and search ==False:
-        ic.centralise()
-        rospy.sleep(1)
+      if ready_pick_up == False:
+        ic.centralise() # This is the actual code which controls the robot
         ic.move_towards()
       if ready_pick_up == True and ready_place ==False:
         ic.pick_procedure()
