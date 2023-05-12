@@ -150,11 +150,11 @@ class cubeSpotter:
 
     # Erode then Dilate the image to remove small elements
     erodedMaskRed=erode(maskRed, 4)
-    erodedMaskBlue=erode(maskBlue, 4)
+    erodedMaskBlue=erode(maskBlue, 6)
     erodedMaskYellow=erode(maskYellow, 4)    
     
     dilatedMaskRed=dilate(erodedMaskRed, 5)
-    dilatedMaskBlue=dilate(erodedMaskBlue, 5)
+    dilatedMaskBlue=dilate(erodedMaskBlue, 2)
     dilatedMaskYellow=dilate(erodedMaskYellow, 5)
 
 
