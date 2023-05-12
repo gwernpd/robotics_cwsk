@@ -194,6 +194,8 @@ class cubeTracker:
 
 
   def pick_procedure(self):
+    global ready_place, start_detect
+    start_detect = False
     print('picking_up')
     self.jointRequest.position[3]=self.jointPose[3]-(0.44)
     self.setPose(str(),self.jointRequest,2.0)
@@ -201,7 +203,6 @@ class cubeTracker:
     self.gripperRequest.position=[-0.01]# -0.01 represents closed
     self.setGripper(str(),self.gripperRequest,1.0)
     rospy.sleep(2)
-    global ready_place
     ready_place = True
 
   def place_procedure(self):
@@ -218,11 +219,13 @@ class cubeTracker:
       rospy.sleep(2)
       if self.colour == 'red':
         no_red = True
-      if self.colour == 'blue':
+        search = True
+      elif self.colour == 'blue':
         no_blue = True
-      if self.colour == 'yellow':
+        search = True
+      elif self.colour == 'yellow':
         no_yellow = True
-      search = True
+        search = True
     if block_2 == True:
       self.jointRequest.position=[self.jointPose[0],-0.014,-0.640,1.7]
       self.setPose(str(),self.jointRequest,2.0)
@@ -235,11 +238,14 @@ class cubeTracker:
       rospy.sleep(2)
       if self.colour == 'red':
         no_red = True
-      if self.colour == 'blue':
+        search = True
+      elif self.colour == 'blue':
         no_blue = True
-      if self.colour == 'yellow':
+        search = True
+      elif self.colour == 'yellow':
         no_yellow = True
-      search = True
+        search = True
+      
     if block_3 == True:
       self.jointRequest.position=[self.jointPose[0],-0.014,-0.640,1.7]
       self.setPose(str(),self.jointRequest,2.0)
@@ -261,7 +267,8 @@ class cubeTracker:
     rospy.sleep(2)
     self.jointRequest.position=[-1.457,-0.5,0,2]
     self.setPose(str(),self.jointRequest,2.0)
-    rospy.sleep(2)
+    rospy.sleep(5)
+    start_detect = True
     self.jointRequest.position=[joint_1,-1.352,0.379,1.906]
     self.setPose(str(),self.jointRequest,2.0)
     rospy.sleep(2)
@@ -292,6 +299,7 @@ class cubeTracker:
           coY.append(data.cubes[c].normalisedCoordinateY)
           if no_red == True and no_blue == True and no_yellow == True:
             counter = 3
+        
         
 
         
