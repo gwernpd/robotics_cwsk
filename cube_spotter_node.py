@@ -103,16 +103,13 @@ class cubeSpotter:
 
 
     # Blue
-    self.hsvBlueLow=(90, 50, 70)
-    self.hsvBlueHigh=(128,255,255)
+    self.hsvBlueLow=(100, 50, 50)
+    self.hsvBlueHigh=(130,255,255)
 
 
     # Red - wraps around 0, but the red blocks are mostly in the 0-10 range
     self.hsvRedLow1=(0, 50, 50)
     self.hsvRedHigh1=(10,255,255)
-
-
-
     self.hsvRedLow2=(170, 50, 50)
     self.hsvRedHigh2=(180,255,255)
 
@@ -162,7 +159,7 @@ class cubeSpotter:
 
 
     # Minimum area of objects to find in pixels
-    minArea=300
+    minArea=1000
 
     # Draw onto the original image
     canvas=cv_image
@@ -175,7 +172,7 @@ class cubeSpotter:
     canvas,cubeListYellow = mask2box(dilatedMaskYellow,(0,255,255),canvas,minArea)
     cv_image[240,320] = [0,255,0]
 
-    cv2.imshow("Detected Objects", cv_image)
+    cv2.imshow("Detected Objects",cv_image)
     cv2.waitKey(3) # This redraws the window
 
 
@@ -191,7 +188,6 @@ class cubeSpotter:
       tempCube.area=cubeListRed[c].area
       tempCube.normalisedCoordinateX=cubeListRed[c].centreX/cols
       tempCube.normalisedCoordinateY=cubeListRed[c].centreY/rows 
-           
       returnCubeArray.cubes.append(tempCube)
 
     for c in range(len(cubeListBlue)):
