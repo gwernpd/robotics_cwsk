@@ -156,7 +156,7 @@ class cubeTracker:
       print(self.targetArea)
       move = True
       if check_range == True:
-        if abs(self.targetArea)<12000:
+        if abs(self.targetArea)<10750:
           if len(self.colour) ==0:
             pass
           if self.colour == 'red':
@@ -176,10 +176,10 @@ class cubeTracker:
           
       if move == True:
 
-        if abs(self.targetArea)<135000 and abs(self.targetArea)>12000:
+        if abs(self.targetArea)<135000 and abs(self.targetArea)>10750:
           if self.jointPose[3] > 1.90:
             self.jointRequest.position[3]=self.jointPose[3]+(0.1)
-            self.jointRequest.position[1]=(self.jointPose[1]-(0.15))
+            self.jointRequest.position[1]=(self.jointPose[1]-(0.1))
             self.jointRequest.position[2]=(self.jointPose[2]+(0.1))
           try:
             self.jointRequest.position[1]=(self.jointPose[1]+(0.2))
@@ -214,9 +214,11 @@ class cubeTracker:
       self.jointRequest.position=[-1.457,-0.014,-0.640,1.7]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,0.584,-0.502,1.607]
+
+      self.jointRequest.position=[-1.457,0.600,-0.494,1.608]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
+
       if self.colour == 'red':
         no_red = True
         search = True
@@ -230,12 +232,14 @@ class cubeTracker:
       self.jointRequest.position=[self.jointPose[0],-0.014,-0.640,1.7]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,-0.014,-0.640,1.7]
+      self.jointRequest.position=[-1.457,-0.046,-0.463,1.703]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,0.348,-0.328,1.6548]
+
+      self.jointRequest.position=[-1.457,0.374,-0.437,1.608]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
+
       if self.colour == 'red':
         no_red = True
         search = True
@@ -250,12 +254,14 @@ class cubeTracker:
       self.jointRequest.position=[self.jointPose[0],-0.014,-0.640,1.7]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,-0.014,-0.640,1.7]
+      self.jointRequest.position=[-1.457,-0.219,-0.426,1.611]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
-      self.jointRequest.position=[-1.457,0.281,-0.419,1.669]
+
+      self.jointRequest.position=[-1.457,0.249,-0.417,1.612]
       self.setPose(str(),self.jointRequest,2.0)
       rospy.sleep(2)
+
       no_red = True
       no_blue = True
       no_yellow = True
