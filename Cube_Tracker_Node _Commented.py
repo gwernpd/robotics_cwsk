@@ -107,17 +107,19 @@ class cubeTracker:
       self.readyToMove=False    # Set readyToMove to False
 
   def search(self, joint_1):    # Define search function
-    global counter, block_1, block_2, block_3, search, start_detect    # Define global variables
+    global counter, block_1, block_2, block_3, search, start_detect, check_range    # Define global variables
     print('Searching...')    # Print message on console
     
-    if joint_1 < 0.8:    # check if joint_1 is less than 0.8 rad
+    if joint_1 < 0.25:    # check if joint_1 is less than 0 rad
       self.jointRequest.position=[joint_1,-1.352,0.379,1.906]    # request joint joint positions
       self.setPose(str(), self.jointRequest,2.0)    # call function setPose() to set joint request
       rospy.sleep(2) #    # wait for 2 seconds
       start_detect = True    # set value of start_detect to True
+
+
     if self.targetArea > 500:    # check if targetArea is greater than 500
       search = False    # set value of search to False
-      print(self.colour)    # print the value of coloured block
+      check_range = True
       if counter == 0:    # check if counter is 0
         block_1 = True    # set value of block_1 to True
       if counter == 1:    # check if counter is 1
@@ -128,7 +130,7 @@ class cubeTracker:
         block_3 = True    # set value of block_3 to True
 
   # Using the data from all the subscribers, call the robot's services to move the end effector
-    def centralise(self):    # Defining function "centralise"
+  def centralise(self):    # Defining function "centralise"
       if self.jointPose[3] > 1.90:    # Check if value of joint 4's jointPose is greater than 1.9
             self.jointRequest.position[3]=self.jointPose[3]-(0.15)    # Subtract 0.15 from the value of joint 4's jointPose and store in 3rd index of jointRequest
             self.jointRequest.position[1]=(self.jointPose[1]+(0.15))    # Add 0.15 from the value of joint 2's jointPose and store in 1st index of jointRequest
@@ -147,16 +149,16 @@ class cubeTracker:
       # This command sends the message to the robot    # Comment
       self.setPose(str(),self.jointRequest,1.0)    # set requested joint pose in 1 second
       rospy.sleep(1) # Wait 1 second
-      check_range = True    # Assign true to check_range
+      #check_range = True    # Assign true to check_range
       # This command sends the message to the robot
       self.setPose(str(),self.jointRequest,1.0)
       rospy.sleep(1) # Sleep after sending the service request as you can crash the robot firmware if you poll too fast
-      check_range = True    # Assign true to check_range
+      #check_range = True    # Assign true to check_range
   
   def move_towards(self):    # Defining function "move_towards"
     global counter, check_range, ready_pick_up, search, no_red, no_blue, no_yellow,start_detect    # initializing counters
     if self.readyToMove==True: # If readyToMove is true
-      print(self.targetArea)    # print targetArea 
+      #print(self.targetArea)    # print targetArea 
       move = True    # set move to true
       if check_range == True:    # check if check_range is true 
         if abs(self.targetArea)<10750:    # check if targetArea is less than 10750
@@ -198,7 +200,7 @@ class cubeTracker:
   def pick_procedure(self):    # Define function "pick_procedure"
     global ready_place, start_detect  # Initialize global variables
     start_detect = False #set start_detect to false
-    print('picking_up') #print picking up
+    #print('picking_up') #print picking up
     self.jointRequest.position[3]=self.jointPose[3]-(0.44)    # decrease joint 3 by 0.44 from the current position 
     self.setPose(str(),self.jointRequest,2.0)    # Set the pose of the robot in 2 seconds
     rospy.sleep(2)    # wait for 2 seconds
@@ -217,7 +219,7 @@ class cubeTracker:
       self.setPose(str(),self.jointRequest,2.0)    # Set the pose of joints
       rospy.sleep(2)    # wait for 2 seconds
 
-      self.jointRequest.position=[-1.457,0.600,-0.494,1.608]    # request the joints to move positions
+      self.jointRequest.position=[-1.457,0.600,-0.494,1.55]    # request the joints to move positions
       self.setPose(str(),self.jointRequest,2.0)    # Set the pose of joints
       rospy.sleep(2)    # wait for 2 seconds
 
@@ -259,7 +261,7 @@ class cubeTracker:
       self.setPose(str(),self.jointRequest,2.0)    # Set the pose of robot 
       rospy.sleep(2)    # wait for 2 seconds
       
-      self.jointRequest.position=[-1.457,0.249,-0.417,1.612]    # request new joint position
+      self.jointRequest.position=[-1.457,0.249,-0.417,1.7]    # request new joint position
       self.setPose(str(),self.jointRequest,2.0)    # Set the pose of robot 
       rospy.sleep(2)    # wait for 2 seconds
 
@@ -331,6 +333,7 @@ def main(args):    # Main function
       print('Not bothering with Red: {}'.format(no_red))    # Print red colour
       print('Not bothering with Blue: {}'.format(no_blue))    # Print blue colour
       print('Not bothering with Yellow: {}'.format(no_yellow))    # Print yellow colour
+      print("                               ")
 
       if no_red == True and no_blue == True and no_yellow == True:    # Check if no other colours are true
             counter = 3    # Set counter to 3
@@ -338,7 +341,10 @@ def main(args):    # Main function
         break    # Break the loop to end task
       if search == True:    # Check if search is True
         ic.search(joint_1)    # Call search function
-        joint_1 = joint_1 + 0.3    # increase joint_1 by 0.3
+        joint_1 = joint_1 + 0.25    # increase joint_1 by 0.25
+        if joint_1 == 0.25: # Check if joint_1 has reached our limit
+          joint_1 = -1 # resets the search function
+      
       if ready_pick_up == False:    # Check if ready_pick_up is False
         ic.centralise() # Call centralise function
         rospy.sleep(1)    # Delay of 1 second
